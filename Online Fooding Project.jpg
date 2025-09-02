@@ -1,11 +1,239 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<module type="JAVA_MODULE" version="4">
-  <component name="NewModuleRootManager" inherit-compiler-output="true">
-    <exclude-output />
-    <content url="file://$MODULE_DIR$">
-      <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
-    </content>
-    <orderEntry type="inheritedJdk" />
-    <orderEntry type="sourceFolder" forTests="false" />
-  </component>
-</module>
+package Deliverable;
+
+import java.util.*;
+
+// -------------------- Interface --------------------
+interface Deliverable {
+    void deliver();
+}
+
+// -------------------- Exceptions --------------------
+class InvalidOrderException extends Exception {
+    public InvalidOrderException(String message) {
+        super(message);
+    }
+}
+
+class PaymentFailedException extends Exception {
+    public PaymentFailedException(String message) {
+        super(message);
+    }
+}
+
+// -------------------- FoodItem (Abstract + Polymorphism) --------------------
+abstract class FoodItem {
+    protected String name;
+    protected double price;
+
+    public FoodItem(String name, double price) {
+        this.name = name;
+        this.price = price;
+    }
+
+    // Polymorphism: Veg/NonVeg pricing may vary
+    public abstract double getPrice();
+
+    public String getName() {
+        return name;
+    }
+}
+
+class VegFoodItem extends FoodItem {
+    public VegFoodItem(String name, double price) {
+        super(name, price);
+    }
+
+    @Override
+    public double getPrice() {
+        return price; // no extra charges
+    }
+}
+
+class NonVegFoodItem extends FoodItem {
+    public NonVegFoodItem(String name, double price) {
+        super(name, price);
+    }
+
+    @Override
+    public double getPrice() {
+        // Example: non-veg items have 10% extra tax
+        return price * 1.10;
+    }
+}
+
+// -------------------- Customer --------------------
+class Customer {
+    private String name;
+    private String address;
+
+    public Customer(String name, String address) {
+        this.name = name;
+        this.address = address;
+    }
+
+    public String getName() { return name; }
+    public String getAddress() { return address; }
+}
+
+// -------------------- Restaurant --------------------
+class Restaurant {
+    private String name;
+    private FoodItem[] menu;
+
+    public Restaurant(String name, FoodItem[] menu) {
+        this.name = name;
+        this.menu = menu;
+    }
+
+    public String getName() { return name; }
+    public FoodItem[] getMenu() { return menu; }
+}
+
+// -------------------- Order (Implements Deliverable) --------------------
+class Order implements Deliverable {
+    private Customer customer;
+    private Restaurant restaurant;
+    private FoodItem[] items;
+    private boolean isDelivered;
+    private boolean isCancelled;
+
+    public Order(Customer customer, Restaurant restaurant, FoodItem[] items) throws InvalidOrderException {
+        if (items == null || items.length == 0) {
+            throw new InvalidOrderException("Order must have at least one item!");
+        }
+        this.customer = customer;
+        this.restaurant = restaurant;
+        this.items = items;
+        this.isDelivered = false;
+        this.isCancelled = false;
+    }
+
+    public double calculateTotalBill() {
+        double total = 0;
+        for (FoodItem item : items) {
+            total += item.getPrice();
+        }
+        return total;
+    }
+
+    public double applyDiscount(double percentage) {
+        double total = calculateTotalBill();
+        return total - (total * percentage / 100);
+    }
+
+    public void cancelOrder() {
+        if (!isDelivered) {
+            isCancelled = true;
+            System.out.println("Order cancelled.");
+        } else {
+            System.out.println("Cannot cancel. Already delivered.");
+        }
+    }
+
+    public void trackOrder() {
+        if (isCancelled) {
+            System.out.println("Order has been cancelled.");
+        } else if (isDelivered) {
+            System.out.println("Order delivered.");
+        } else {
+            System.out.println("Order is being prepared.");
+        }
+    }
+
+    public void makePayment(boolean paymentSuccess) throws PaymentFailedException {
+        if (!paymentSuccess) {
+            throw new PaymentFailedException("Payment failed. Please try again.");
+        }
+        System.out.println("Payment successful!");
+    }
+
+    @Override
+    public void deliver() {
+        if (!isCancelled) {
+            isDelivered = true;
+            System.out.println("Order delivered to " + customer.getAddress());
+        } else {
+            System.out.println("Order cannot be delivered. It was cancelled.");
+        }
+    }
+}
+
+// -------------------- Main (Demo with switch-case) --------------------
+public class food {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        try {
+            // Menu
+            FoodItem[] menu = {
+                    new VegFoodItem("Paneer Butter Masala", 250),
+                    new NonVegFoodItem("Chicken Biryani", 300),
+                    new VegFoodItem("Veg Pulao", 180),
+                    new NonVegFoodItem("Mutton Curry", 400)
+            };
+
+            Restaurant rest = new Restaurant("Food Paradise", menu);
+            Customer cust = new Customer("Rahul", "Patna, Bihar");
+
+            // Select items using switch-case
+            List<FoodItem> orderList = new ArrayList<>();
+            int choice;
+            do {
+                System.out.println("\n--- Menu ---");
+                for (int i = 0; i < menu.length; i++) {
+                    System.out.println((i + 1) + ". " + menu[i].getName() + " - Rs." + menu[i].getPrice());
+                }
+                System.out.println("0. Finish Ordering");
+                System.out.print("Enter your choice: ");
+                choice = sc.nextInt();
+
+                switch (choice) {
+                    case 1:
+                        orderList.add(menu[0]);
+                        System.out.println(menu[0].getName() + " added.");
+                        break;
+                    case 2:
+                        orderList.add(menu[1]);
+                        System.out.println(menu[1].getName() + " added.");
+                        break;
+                    case 3:
+                        orderList.add(menu[2]);
+                        System.out.println(menu[2].getName() + " added.");
+                        break;
+                    case 4:
+                        orderList.add(menu[3]);
+                        System.out.println(menu[3].getName() + " added.");
+                        break;
+                    case 0:
+                        System.out.println("Order completed.");
+                        break;
+                    default:
+                        System.out.println("Invalid choice! Try again.");
+                }
+
+            } while (choice != 0);
+
+            // Place Order
+            FoodItem[] orderItems = orderList.toArray(new FoodItem[0]);
+            Order order = new Order(cust, rest, orderItems);
+
+            // Calculate Bill
+            System.out.println("\nTotal Bill: " + order.calculateTotalBill());
+            System.out.println("After 10% Discount: " + order.applyDiscount(10));
+
+            // Payment
+            order.makePayment(true);
+
+            // Track & Deliver
+            order.trackOrder();
+            order.deliver();
+            order.trackOrder();
+
+            // Try cancellation after delivery
+            order.cancelOrder();
+
+        } catch (InvalidOrderException | PaymentFailedException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+}
